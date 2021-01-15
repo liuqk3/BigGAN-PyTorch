@@ -16,13 +16,11 @@ from torch.utils.data import DataLoader
          
 IMG_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm']
 
-
 def make_sure_dir(file_or_path):
   if not os.path.isdir(file_or_path):
     file_or_path = os.path.dirname(os.path.abspath(file_or_path))
   if not os.path.exists(file_or_path):
     os.makedirs(file_or_path)
-
 
 def is_image_file(filename):
     """Checks if a file is an image.

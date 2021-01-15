@@ -401,6 +401,12 @@ def add_sample_parser(parser):
   return parser
 
 
+def make_sure_dir(file_or_path):
+  if not os.path.isdir(file_or_path):
+    file_or_path = os.path.dirname(os.path.abspath(file_or_path))
+  if not os.path.exists(file_or_path):
+    os.makedirs(file_or_path)
+
 def save_config_to_json(config, filename):
   '''
   Save the dictyionary config to a json file in the fiven path
@@ -409,8 +415,7 @@ def save_config_to_json(config, filename):
     filename: str, the path to save 
   '''
   assert filename.endswith('.json'), 'the filename for the saving of config should be end with .josn'
-  if not os.path.exists(os.path.dirname(filename)):
-    os.makedirs(os.path.dirname(filename))
+  make_sure_dir(filename)
   config_ = {}
   for k in config:
     if isinstance(config[k], (str, list, int, float, bool)):
@@ -729,6 +734,18 @@ def save_weights(G, D, state_dict, weights_root, experiment_name,
   if G_ema is not None:
     torch.save(G_ema.state_dict(), 
                 '%s/%s.pth' % (root, join_strings('_', ['G_ema', name_suffix])))
+
+
+def load_state_dict(model, state_dict, strict=True):
+  keys_p = list(state_dict.keys())
+  keys_r = list(model.state_dict().keys())
+  keys_r_miss = [k for k in keys_r if k not in keys_p]
+  keys_p_miss = [k for k in keys_p if k not in keys_r]
+  model.load_state_dict(state_dict, strict=strict)
+  if len(keys_r_miss) > 0:
+    print("No param in provided state dict: {}".format(str(keys_r_miss)))
+  if len(keys_p_miss) > 0:
+    print("No param in the model: {}".format(str(keys_p_miss)))
 
 
 # Load a model's weights, optimizer, and the state_dict
@@ -1089,11 +1106,42 @@ class Distribution(torch.Tensor):
     elif self.dist_type == 'categorical':
       self.num_categories = kwargs['num_categories']
 
+      # if given the number of category ids, and each number of sampls for each categroy,
+      # the conditional y will be generated in the given manner
+      if 'num_categories_to_sample' in kwargs and 'per_category_to_sample' in kwargs:
+        if kwargs['num_categories_to_sample'] is not None and kwargs['per_category_to_sample'] is not None:
+          self.num_categories_to_sample = kwargs['num_categories_to_sample'] 
+          self.per_category_to_sample = kwargs['per_category_to_sample']
+          if self.num_categories_to_sample <= 0:
+            self.categories_to_sample = list(range(self.num_categories))
+          else:
+            categories = list(range(self.num_categories))
+            np.random.shuffle(categories)
+            self.categories_to_sample = categories[:self.num_categories_to_sample]
+          self.count = 0
+          self.total_count = len(self.categories_to_sample) * self.per_category_to_sample
+          self.next = True
+
   def sample_(self):
     if self.dist_type == 'normal':
       self.normal_(self.mean, self.var)
     elif self.dist_type == 'categorical':
-      self.random_(0, self.num_categories)    
+      if hasattr(self, 'categories_to_sample') and hasattr(self, 'per_category_to_sample'):
+        self.next = self.count <= self.total_count
+        batch_size = self.shape[0]
+        count_cur = self.count + batch_size
+        cate_idx_pre = self.count // self.per_category_to_sample
+        cate_idx_cur = count_cur // self.per_category_to_sample
+        cate_id = self.categories_to_sample[cate_idx_pre:cate_idx_cur+1]
+        cate_id = torch.tensor(cate_id).unsqueeze(dim=1).repeat(1, self.num_categories_to_sample).view(-1)
+        if cate_id.shape[0] < batch_size:
+          cate_id = torch.cat((cate_id, cate_id), dim=0)
+        start_idx = self.count - self.num_categories_to_sample * max(0, cate_idx_pre - 1)
+        end_idx = start_idx + batch_size
+        self.copy_(cate_id[start_idx:end_idx])
+        self.count = count_cur
+      else: # generate the category label randomly
+        self.random_(0, self.num_categories)    
     # return self.variable
     
   # Silly hack: overwrite the to() method to wrap the new object
@@ -1107,7 +1155,8 @@ class Distribution(torch.Tensor):
 
 # Convenience function to prepare a z and y vector
 def prepare_z_y(G_batch_size, dim_z, nclasses, device='cuda', 
-                fp16=False,z_var=1.0):
+                fp16=False,z_var=1.0, per_category_to_sample=None,
+                num_categorie_to_sample=None):
   z_ = Distribution(torch.randn(G_batch_size, dim_z, requires_grad=False))
   z_.init_distribution('normal', mean=0, var=z_var)
   z_ = z_.to(device,torch.float16 if fp16 else torch.float32)   
@@ -1116,7 +1165,9 @@ def prepare_z_y(G_batch_size, dim_z, nclasses, device='cuda',
     z_ = z_.half()
 
   y_ = Distribution(torch.zeros(G_batch_size, requires_grad=False))
-  y_.init_distribution('categorical',num_categories=nclasses)
+  y_.init_distribution('categorical',num_categories=nclasses,
+                        per_category_to_sample=None,
+                        num_categorie_to_sample=None)
   y_ = y_.to(device, torch.int64)
   return z_, y_
 
