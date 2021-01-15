@@ -7,6 +7,7 @@
  estimated as it is label-ordered. By default, the data is not shuffled
  so as to reduce non-determinism. '''
 import numpy as np
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -20,7 +21,7 @@ def prepare_parser():
   usage = 'Calculate and store inception metrics.'
   parser = ArgumentParser(description=usage)
   parser.add_argument(
-    '--dataset', type=str, default='I128_hdf5',
+    '--dataset', type=str, default='I128',#TODO'I128_hdf5',
     help='Which Dataset to train on, out of I128, I256, C10, C100...'
          'Append _hdf5 to use the hdf5 version of the dataset. (default: %(default)s)')
   parser.add_argument(
@@ -77,7 +78,10 @@ def run(config):
   print('Calculating means and covariances...')
   mu, sigma = np.mean(pool, axis=0), np.cov(pool, rowvar=False)
   print('Saving calculated means and covariances to disk...')
-  np.savez(config['dataset'].strip('_hdf5')+'_inception_moments.npz', **{'mu' : mu, 'sigma' : sigma})
+  save_dir = os.path.join(os.path.dirname(__file__), 'data', 'cache')
+  if not os.path.exists(save_dir):
+    os.makedirs(save_dir)
+  np.savez(os.path.join(save_dir, config['dataset'].strip('_hdf5')+'_inception_moments.npz'), **{'mu' : mu, 'sigma' : sigma})
 
 def main():
   # parse command line    

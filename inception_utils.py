@@ -14,7 +14,7 @@
 import numpy as np
 from scipy import linalg # For numpy FID
 import time
-
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -275,9 +275,11 @@ def prepare_inception_metrics(dataset, parallel, no_fid=False):
   # Load metrics; this is intentionally not in a try-except loop so that
   # the script will crash here if it cannot find the Inception moments.
   # By default, remove the "hdf5" from dataset
+  cwd = os.path.dirname(__file__)
+  inception_moments_path = os.path.join(cwd, 'data', 'cache', dataset+'_inception_moments.npz')
   dataset = dataset.strip('_hdf5')
-  data_mu = np.load(dataset+'_inception_moments.npz')['mu']
-  data_sigma = np.load(dataset+'_inception_moments.npz')['sigma']
+  data_mu = np.load(inception_moments_path)['mu']
+  data_sigma = np.load(inception_moments_path)['sigma']
   # Load network
   net = load_inception_net(parallel)
   def get_inception_metrics(sample, num_inception_images, num_splits=10, 

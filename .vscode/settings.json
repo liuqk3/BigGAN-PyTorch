@@ -1,0 +1,12 @@
+{
+    "python.pythonPath": "/home/t-qiankunliu/include/anaconda3/envs/BigGAN/bin/python",
+    "python.linting.pylintEnabled": true,
+
+	"python.linting.pylintArgs":[
+		"--load-plugins", "pylint_django",
+		"--errors-only",
+		"--generated-members=torch.*, cv2.*, numpy.*"],
+	"terminal.integrated.env.linux": {
+		"DISPLAY": "localhost:10.0",
+}
+}

@@ -6,6 +6,9 @@ In addition to the base libraries for BigGAN-PyTorch, to run this code you will 
 TensorFlow
 TFHub
 parse
+```
+pip install tensorflow==1.7 tensorflow-hub==0.2 parse
+```
 
 Note that this code is only presently set up to run the ported models without truncation--you'll need to accumulate standing stats at each truncation level yourself if you wish to employ it.
 

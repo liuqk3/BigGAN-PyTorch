@@ -48,13 +48,13 @@ def prepare_parser():
     '--no_pin_memory', action='store_false', dest='pin_memory', default=True,
     help='Pin data into memory through dataloader? (default: %(default)s)') 
   parser.add_argument(
-    '--shuffle', action='store_true', default=False,
+    '--shuffle', action='store_true', default=True,#TODOFalse,
     help='Shuffle the data (strongly recommended)? (default: %(default)s)')
   parser.add_argument(
     '--load_in_mem', action='store_true', default=False,
     help='Load all data into memory? (default: %(default)s)')
   parser.add_argument(
-    '--use_multiepoch_sampler', action='store_true', default=False,
+    '--use_multiepoch_sampler', action='store_true', default=True,#TODOFalse,
     help='Use the multi-epoch sampler for dataloader? (default: %(default)s)')
   
   
@@ -71,10 +71,10 @@ def prepare_parser():
     help='Parameterization style to use for D, spectral norm (SN) or SVD (SVD)'
          ' or None (default: %(default)s)')    
   parser.add_argument(
-    '--G_ch', type=int, default=64,
+    '--G_ch', type=int, default=96, #TODO 64,
     help='Channel multiplier for G (default: %(default)s)')
   parser.add_argument(
-    '--D_ch', type=int, default=64,
+    '--D_ch', type=int, default=96, #TODO64,
     help='Channel multiplier for D (default: %(default)s)')
   parser.add_argument(
     '--G_depth', type=int, default=1,
@@ -86,20 +86,20 @@ def prepare_parser():
     '--D_thin', action='store_false', dest='D_wide', default=True,
     help='Use the SN-GAN channel pattern for D? (default: %(default)s)')
   parser.add_argument(
-    '--G_shared', action='store_true', default=False,
+    '--G_shared', action='store_true', default=True,#TODOFalse,
     help='Use shared embeddings in G? (default: %(default)s)')
   parser.add_argument(
-    '--shared_dim', type=int, default=0,
+    '--shared_dim', type=int, default=128,#TODO0,
     help='G''s shared embedding dimensionality; if 0, will be equal to dim_z. '
          '(default: %(default)s)')
   parser.add_argument(
-    '--dim_z', type=int, default=128,
+    '--dim_z', type=int, default=120,#TODO128,
     help='Noise dimensionality: %(default)s)')
   parser.add_argument(
     '--z_var', type=float, default=1.0,
     help='Noise variance: %(default)s)')    
   parser.add_argument(
-    '--hier', action='store_true', default=False,
+    '--hier', action='store_true', default=True,#TODOFalse,
     help='Use hierarchical z in G? (default: %(default)s)')
   parser.add_argument(
     '--cross_replica', action='store_true', default=False,
@@ -108,10 +108,10 @@ def prepare_parser():
     '--mybn', action='store_true', default=False,
     help='Use my batchnorm (which supports standing stats?) %(default)s)')
   parser.add_argument(
-    '--G_nl', type=str, default='relu',
+    '--G_nl', type=str, default='inplace_relu',#TODO'relu',
     help='Activation function for G (default: %(default)s)')
   parser.add_argument(
-    '--D_nl', type=str, default='relu',
+    '--D_nl', type=str, default='inplace_relu',#TODO'relu',
     help='Activation function for D (default: %(default)s)')
   parser.add_argument(
     '--G_attn', type=str, default='64',
@@ -138,16 +138,16 @@ def prepare_parser():
     '--D_init', type=str, default='ortho',
     help='Init style to use for D(default: %(default)s)')
   parser.add_argument(
-    '--skip_init', action='store_true', default=False,
+    '--skip_init', action='store_true', default=True,#TODOFalse,
     help='Skip initialization, ideal for testing when ortho init was used '
           '(default: %(default)s)')
   
   ### Optimizer stuff ###
   parser.add_argument(
-    '--G_lr', type=float, default=5e-5,
+    '--G_lr', type=float, default=1e-4,#TODO5e-5,
     help='Learning rate to use for Generator (default: %(default)s)')
   parser.add_argument(
-    '--D_lr', type=float, default=2e-4,
+    '--D_lr', type=float, default=4e-4,#TODO2e-4,
     help='Learning rate to use for Discriminator (default: %(default)s)')
   parser.add_argument(
     '--G_B1', type=float, default=0.0,
@@ -164,20 +164,20 @@ def prepare_parser():
     
   ### Batch size, parallel, and precision stuff ###
   parser.add_argument(
-    '--batch_size', type=int, default=64,
+    '--batch_size', type=int, default=256,#TODO64,
     help='Default overall batchsize (default: %(default)s)')
   parser.add_argument(
-    '--G_batch_size', type=int, default=0,
+    '--G_batch_size', type=int, default=512,#TODO0,
     help='Batch size to use for G; if 0, same as D (default: %(default)s)')
   parser.add_argument(
-    '--num_G_accumulations', type=int, default=1,
+    '--num_G_accumulations', type=int, default=8,#TODO1,
     help='Number of passes to accumulate G''s gradients over '
          '(default: %(default)s)')  
   parser.add_argument(
-    '--num_D_steps', type=int, default=2,
+    '--num_D_steps', type=int, default=1,#TODO2,
     help='Number of D steps per G step (default: %(default)s)')
   parser.add_argument(
-    '--num_D_accumulations', type=int, default=1,
+    '--num_D_accumulations', type=int, default=8,#TODO1,
     help='Number of passes to accumulate D''s gradients over '
          '(default: %(default)s)')
   parser.add_argument(
@@ -187,7 +187,7 @@ def prepare_parser():
     '--num_epochs', type=int, default=100,
     help='Number of epochs to train for (default: %(default)s)')
   parser.add_argument(
-    '--parallel', action='store_true', default=False,
+    '--parallel', action='store_true', default=True, #TODOFalse,
     help='Train with multiple GPUs (default: %(default)s)')
   parser.add_argument(
     '--G_fp16', action='store_true', default=False,
@@ -213,17 +213,17 @@ def prepare_parser():
     
   ### Bookkeping stuff ###  
   parser.add_argument(
-    '--G_eval_mode', action='store_true', default=False,
+    '--G_eval_mode', action='store_true', default=True,#TODOFalse,
     help='Run G in eval mode (running/standing stats?) at sample/test time? '
          '(default: %(default)s)')
   parser.add_argument(
-    '--save_every', type=int, default=2000,
+    '--save_every', type=int, default=1000,#TODO2000,
     help='Save every X iterations (default: %(default)s)')
   parser.add_argument(
     '--num_save_copies', type=int, default=2,
     help='How many copies to save (default: %(default)s)')
   parser.add_argument(
-    '--num_best_copies', type=int, default=2,
+    '--num_best_copies', type=int, default=5,#TODO2,
     help='How many previous best checkpoints to save (default: %(default)s)')
   parser.add_argument(
     '--which_best', type=str, default='IS',
@@ -233,7 +233,7 @@ def prepare_parser():
     '--no_fid', action='store_true', default=False,
     help='Calculate IS only, not FID? (default: %(default)s)')
   parser.add_argument(
-    '--test_every', type=int, default=5000,
+    '--test_every', type=int, default=2000,#TODO5000,
     help='Test every X iterations (default: %(default)s)')
   parser.add_argument(
     '--num_inception_images', type=int, default=50000,
@@ -278,27 +278,27 @@ def prepare_parser():
          
   ### EMA Stuff ###
   parser.add_argument(
-    '--ema', action='store_true', default=False,
+    '--ema', action='store_true', default=True,#TODOFalse,
     help='Keep an ema of G''s weights? (default: %(default)s)')
   parser.add_argument(
     '--ema_decay', type=float, default=0.9999,
     help='EMA decay rate (default: %(default)s)')
   parser.add_argument(
-    '--use_ema', action='store_true', default=False,
+    '--use_ema', action='store_true', default=True,#TODOFalse,
     help='Use the EMA parameters of G for evaluation? (default: %(default)s)')
   parser.add_argument(
-    '--ema_start', type=int, default=0,
+    '--ema_start', type=int, default=20000,#TODO0,
     help='When to start updating the EMA weights (default: %(default)s)')
   
   ### Numerical precision and SV stuff ### 
   parser.add_argument(
-    '--adam_eps', type=float, default=1e-8,
+    '--adam_eps', type=float, default=1e-6,#TODO1e-8,
     help='epsilon value to use for Adam (default: %(default)s)')
   parser.add_argument(
     '--BN_eps', type=float, default=1e-5,
     help='epsilon value to use for BatchNorm (default: %(default)s)')
   parser.add_argument(
-    '--SN_eps', type=float, default=1e-8,
+    '--SN_eps', type=float, default=1e-6,#TODO1e-8,
     help='epsilon value to use for Spectral Norm(default: %(default)s)')
   parser.add_argument(
     '--num_G_SVs', type=int, default=1,
@@ -365,7 +365,7 @@ def prepare_parser():
 # Arguments for sample.py; not presently used in train.py
 def add_sample_parser(parser):
   parser.add_argument(
-    '--sample_npz', action='store_true', default=False,
+    '--sample_npz', action='store_true', default=True,#TODOFalse,
     help='Sample "sample_num_npz" images and save to npz? '
          '(default: %(default)s)')
   parser.add_argument(
@@ -373,11 +373,11 @@ def add_sample_parser(parser):
     help='Number of images to sample when sampling NPZs '
          '(default: %(default)s)')
   parser.add_argument(
-    '--sample_sheets', action='store_true', default=False,
+    '--sample_sheets', action='store_true', default=True,#TODOFalse,
     help='Produce class-conditional sample sheets and stick them in '
          'the samples root? (default: %(default)s)')
   parser.add_argument(
-    '--sample_interps', action='store_true', default=False,
+    '--sample_interps', action='store_true', default=True,#TODOFalse,
     help='Produce interpolation sheets and stick them in '
          'the samples root? (default: %(default)s)')         
   parser.add_argument(
@@ -385,10 +385,10 @@ def add_sample_parser(parser):
     help='Number to use for the folder for these sample sheets '
          '(default: %(default)s)')
   parser.add_argument(
-    '--sample_random', action='store_true', default=False,
+    '--sample_random', action='store_true', default=True,#TODOFalse,
     help='Produce a single random sheet? (default: %(default)s)')
   parser.add_argument(
-    '--sample_trunc_curves', type=str, default='',
+    '--sample_trunc_curves', type=str, default='0.05_0.05_1.0',#TODO'',
     help='Get inception metrics with a range of variances?'
          'To use this, specify a startpoint, step, and endpoint, e.g. '
          '--sample_trunc_curves 0.2_0.1_1.0 for a startpoint of 0.2, '
@@ -396,9 +396,32 @@ def add_sample_parser(parser):
          'not exactly identical to using tf.truncated_normal, but should '
          'have approximately the same effect. (default: %(default)s)')
   parser.add_argument(
-    '--sample_inception_metrics', action='store_true', default=False,
+    '--sample_inception_metrics', action='store_true', default=True,#TODOFalse,
     help='Calculate Inception metrics with sample.py? (default: %(default)s)')  
   return parser
+
+
+def save_config_to_json(config, filename):
+  '''
+  Save the dictyionary config to a json file in the fiven path
+  Args:
+    config: dict, to be saved
+    filename: str, the path to save 
+  '''
+  assert filename.endswith('.json'), 'the filename for the saving of config should be end with .josn'
+  if not os.path.exists(os.path.dirname(filename)):
+    os.makedirs(os.path.dirname(filename))
+  config_ = {}
+  for k in config:
+    if isinstance(config[k], (str, list, int, float, bool)):
+      config_[k] = config[k]
+    else:
+      config_[k] = str(config[k])
+  with open(filename, 'w') as f:
+    # f.write(json.dumps(config_))
+    json.dump(config_, f, indent=4)
+  print('Config file saved to {}'.format(filename))
+
 
 # Convenience dicts
 dset_dict = {'I32': dset.ImageFolder, 'I64': dset.ImageFolder, 

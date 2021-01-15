@@ -17,6 +17,13 @@ from torch.utils.data import DataLoader
 IMG_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm']
 
 
+def make_sure_dir(file_or_path):
+  if not os.path.isdir(file_or_path):
+    file_or_path = os.path.dirname(os.path.abspath(file_or_path))
+  if not os.path.exists(file_or_path):
+    os.makedirs(file_or_path)
+
+
 def is_image_file(filename):
     """Checks if a file is an image.
 
@@ -108,13 +115,23 @@ class ImageFolder(data.Dataset):
                loader=default_loader, load_in_mem=False, 
                index_filename='imagenet_imgs.npz', **kwargs):
     classes, class_to_idx = find_classes(root)
+    # save the class_id_to_index of image net
+    cwd = os.path.dirname(__file__)
+    class_info_path = os.path.join(cwd, 'data', 'cache', '{}_class_info.json'.format(index_filename.split('.')[0]))
+    idx_to_class = {v: k for k, v in class_to_idx.items()}
+    make_sure_dir(class_info_path)
+    if not os.path.exists(class_info_path):
+      import json
+      json.dump({'class_to_idx': class_to_idx, 'idx_to_class': idx_to_class}, open(class_info_path, 'w'), indent=4)
     # Load pre-computed image directory walk
+    index_filename = os.path.join(cwd, 'data', 'cache', index_filename)
     if os.path.exists(index_filename):
       print('Loading pre-saved Index file %s...' % index_filename)
       imgs = np.load(index_filename)['imgs']
     # If first time, walk the folder directory and save the 
     # results to a pre-computed file.
     else:
+      make_sure_dir(index_filename)
       print('Generating  Index file %s...' % index_filename)
       imgs = make_dataset(root, class_to_idx)
       np.savez_compressed(index_filename, **{'imgs' : imgs})

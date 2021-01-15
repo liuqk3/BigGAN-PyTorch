@@ -20,6 +20,8 @@ import torch
 import torch.nn as nn
 from torchvision.utils import save_image
 import tensorflow as tf
+# import tensorflow.compat.v1 as tf
+# tf.disable_v2_behavior()
 import tensorflow_hub as hub
 import parse
 
@@ -325,9 +327,17 @@ def convert_biggan(resolution, weight_dir, redownload=False, no_ema=False, verbo
   G = BigGAN.Generator(**config)
   G.load_state_dict(state_dict, strict=False) # Ignore missing sv0 entries
   torch.save(state_dict, pth_path)
-  
-  # output_location ='pretrained_weights/TFHub-PyTorch-128.pth'
-  
+  # state_dict = torch.load(pth_path)  
+  # G.load_state_dict(state_dict, strict=False) # Ignore missing sv0 entries
+
+  return G
+
+def create_biggan(resolution, weight_dir):
+  config = get_config(resolution)
+  G = BigGAN.Generator(**config)
+  pth_path = os.path.join(weight_dir, PTH_TMPL.format(resolution))
+  state_dict = torch.load(pth_path)  
+  G.load_state_dict(state_dict, strict=False) # Ignore missing sv0 entries
   return G
 
 
@@ -355,9 +365,9 @@ def parse_args():
     '--redownload', action='store_true', default=False,
     help='Redownload weights and overwrite current hdf5 file, if present.')
   parser.add_argument(
-    '--weights_dir', type=str, default='pretrained_weights')
+    '--weights_dir', type=str, default='../pretrained_weights')
   parser.add_argument(
-    '--samples_dir', type=str, default='pretrained_samples')
+    '--samples_dir', type=str, default='../pretrained_samples')
   parser.add_argument(
     '--no_ema', action='store_true', default=False,
     help='Do not load ema weights.')
@@ -372,7 +382,10 @@ def parse_args():
     help='Batch size used for test sample.')
   parser.add_argument(
     '--parallel', action='store_true', default=False,
-    help='Parallelize G?')     
+    help='Parallelize G?')    
+  parser.add_argument(
+    '--only_sample', action='store_true', default=False,
+    help='only sample with converted parameters?') 
   args = parser.parse_args()
   return args
 
@@ -384,9 +397,12 @@ if __name__ == '__main__':
   os.makedirs(args.samples_dir, exist_ok=True)
 
   if args.resolution is not None:
-    G = convert_biggan(args.resolution, args.weights_dir,
-               redownload=args.redownload,
-               no_ema=args.no_ema, verbose=args.verbose)
+    if args.only_sample:
+      G = create_biggan(args.resolution, args.weights_dir)
+    else:
+      G = convert_biggan(args.resolution, args.weights_dir,
+                redownload=args.redownload,
+                no_ema=args.no_ema, verbose=args.verbose)
     if args.generate_samples:
       filename = os.path.join(args.samples_dir, f'biggan{args.resolution}_samples.jpg')
       print('Generating samples...')

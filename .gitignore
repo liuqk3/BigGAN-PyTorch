@@ -1,1 +1,14 @@
+weights
 
+!logs/BigGAN_ch96_bs256x8.jsonl
+!logs/compare_IS.m
+!logs/metalog.txt
+!logs/process_inception_log.m
+!logs/process_training.m
+logs
+data
+samples
+pretrained_weights
+pretrained_samples
+__pycache__
+*/__pycache__

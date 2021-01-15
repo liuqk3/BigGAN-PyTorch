@@ -4,7 +4,7 @@ import functools
 import math
 import numpy as np
 from tqdm import tqdm, trange
-
+import os
 
 import torch
 import torch.nn as nn
@@ -59,6 +59,7 @@ def run(config):
   experiment_name = (config['experiment_name'] if config['experiment_name']
                        else utils.name_from_config(config))
   print('Experiment name is %s' % experiment_name)
+  utils.save_config_to_json(config, os.path.join(config['samples_root'], experiment_name, 'config.json'))
   
   G = model.Generator(**config).cuda()
   utils.count_parameters(G)
@@ -75,7 +76,7 @@ def run(config):
   z_, y_ = utils.prepare_z_y(G_batch_size, G.dim_z, config['n_classes'],
                              device=device, fp16=config['G_fp16'], 
                              z_var=config['z_var'])
-  
+  # import pdb; pdb.set_trace()
   if config['G_eval_mode']:
     print('Putting G in eval mode..')
     G.eval()
@@ -104,6 +105,8 @@ def run(config):
     y = np.concatenate(y, 0)[:config['sample_num_npz']]    
     print('Images shape: %s, Labels shape: %s' % (x.shape, y.shape))
     npz_filename = '%s/%s/samples.npz' % (config['samples_root'], experiment_name)
+    if not os.path.exists(os.path.join(config['samples_root'], experiment_name)):
+      os.makedirs(os.path.join(config['samples_root'], experiment_name))
     print('Saving npz to %s...' % npz_filename)
     np.savez(npz_filename, **{'x' : x, 'y' : y})
   
