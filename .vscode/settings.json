@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/home/t-qiankunliu/include/anaconda3/envs/BigGAN/bin/python",
+    "python.pythonPath": "/home/liuqk/include/anaconda3/envs/BigGAN/bin/python",
     "python.linting.pylintEnabled": true,
 
 	"python.linting.pylintArgs":[

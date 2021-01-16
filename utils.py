@@ -401,8 +401,8 @@ def add_sample_parser(parser):
   return parser
 
 
-def make_sure_dir(file_or_path):
-  if not os.path.isdir(file_or_path):
+def make_sure_dir(file_or_path, str_type='dir'):
+  if str_type == 'file':
     file_or_path = os.path.dirname(os.path.abspath(file_or_path))
   if not os.path.exists(file_or_path):
     os.makedirs(file_or_path)
@@ -415,7 +415,7 @@ def save_config_to_json(config, filename):
     filename: str, the path to save 
   '''
   assert filename.endswith('.json'), 'the filename for the saving of config should be end with .josn'
-  make_sure_dir(filename)
+  make_sure_dir(filename, str_type='file')
   config_ = {}
   for k in config:
     if isinstance(config[k], (str, list, int, float, bool)):
@@ -949,7 +949,11 @@ def sample_sheet(G, classes_per_sheet, num_classes, samples_per_class, parallel,
 
 # Interp function; expects x0 and x1 to be of shape (shape0, 1, rest_of_shape..)
 def interp(x0, x1, num_midpoints):
-  lerp = torch.linspace(0, 1.0, num_midpoints + 2, device='cuda').to(x0.dtype)
+  """
+  x0: [bs, 1, d]
+  x1: [bs, 1, d]
+  """
+  lerp = torch.linspace(0, 1.0, num_midpoints + 2, device='cuda').to(x0.dtype) # [num_midpoints+2]
   return ((x0 * (1 - lerp.view(1, -1, 1))) + (x1 * lerp.view(1, -1, 1)))
 
 
@@ -1127,19 +1131,19 @@ class Distribution(torch.Tensor):
       self.normal_(self.mean, self.var)
     elif self.dist_type == 'categorical':
       if hasattr(self, 'categories_to_sample') and hasattr(self, 'per_category_to_sample'):
-        self.next = self.count <= self.total_count
         batch_size = self.shape[0]
         count_cur = self.count + batch_size
         cate_idx_pre = self.count // self.per_category_to_sample
         cate_idx_cur = count_cur // self.per_category_to_sample
         cate_id = self.categories_to_sample[cate_idx_pre:cate_idx_cur+1]
-        cate_id = torch.tensor(cate_id).unsqueeze(dim=1).repeat(1, self.num_categories_to_sample).view(-1)
-        if cate_id.shape[0] < batch_size:
-          cate_id = torch.cat((cate_id, cate_id), dim=0)
-        start_idx = self.count - self.num_categories_to_sample * max(0, cate_idx_pre - 1)
+        cate_id = torch.tensor(cate_id).unsqueeze(dim=1).repeat(1, self.per_category_to_sample).view(-1)
+        start_idx = self.count - self.per_category_to_sample * max(0, cate_idx_pre)
         end_idx = start_idx + batch_size
+        if end_idx > cate_id.shape[0]:
+          cate_id = torch.cat((cate_id, cate_id), dim=0)
         self.copy_(cate_id[start_idx:end_idx])
         self.count = count_cur
+        self.next = self.count < self.total_count
       else: # generate the category label randomly
         self.random_(0, self.num_categories)    
     # return self.variable
@@ -1156,7 +1160,7 @@ class Distribution(torch.Tensor):
 # Convenience function to prepare a z and y vector
 def prepare_z_y(G_batch_size, dim_z, nclasses, device='cuda', 
                 fp16=False,z_var=1.0, per_category_to_sample=None,
-                num_categorie_to_sample=None):
+                num_categories_to_sample=None):
   z_ = Distribution(torch.randn(G_batch_size, dim_z, requires_grad=False))
   z_.init_distribution('normal', mean=0, var=z_var)
   z_ = z_.to(device,torch.float16 if fp16 else torch.float32)   
@@ -1166,8 +1170,8 @@ def prepare_z_y(G_batch_size, dim_z, nclasses, device='cuda',
 
   y_ = Distribution(torch.zeros(G_batch_size, requires_grad=False))
   y_.init_distribution('categorical',num_categories=nclasses,
-                        per_category_to_sample=None,
-                        num_categorie_to_sample=None)
+                        per_category_to_sample=per_category_to_sample,
+                        num_categories_to_sample=num_categories_to_sample)
   y_ = y_.to(device, torch.int64)
   return z_, y_
 
